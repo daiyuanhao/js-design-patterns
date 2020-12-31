@@ -231,9 +231,144 @@ Event.trigger('event1', 123)
 
 #### 命令模式
 
+#### 模板方法模式
+
+在抽象父类中封装了子类的算法框架，包括实现一些公共方法以及封装子类中所有方法的执行顺序。子类通过继承这个抽象类，也继承了整个算法结构，并且可以选择重写父类的方法。
+
+```JavaScript
+// 模板
+var Template = function () { }
+Template.prototype.fn1 = function () {
+  console.log('通用第一步')
+}
+Template.prototype.fn2 = function () {
+  throw new Error('子类必须重写fn2方法')
+}
+Template.prototype.fn3 = function () {
+  throw new Error('子类必须重写fn3方法')
+}
+Template.prototype.fn4 = function () {
+  throw new Error('子类必须重写fn4方法')
+}
+Template.prototype.hasFn4 = function () {
+  return true
+}
+Template.prototype.init = function () {
+  this.fn1()
+  this.fn2()
+  this.fn3()
+  if (this.hasFn4()) {
+    this.fn4()
+  }
+}
+
+// 实例
+var Example = function () { }
+Example.prototype = new Template()
+Example.prototype.fn2 = function () {
+  console.log('第二步')
+}
+Example.prototype.fn3 = function () {
+  console.log('第三步')
+}
+Example.prototype.fn4 = function () {
+  console.log('第四步')
+}
+
+var example1 = new Example()
+example1.init()
+```
+
 #### 职责链模式
 
 使多个对象都有机会处理请求，从而避免请求的发送者和接受者之间的耦合关系，将这些对象连成一条链，并沿着这条链传递该请求，直到有一个对象处理它为止。
+
+#### 中介者模式
+
+中介者模式使各个对象之间得以解耦，以中介者和对象之间的一对多关系取代了对象之间的网状多对多关系。各个对象只需关注自身功能的实现，对象之间的交互关系交给了中介者对象来实现和维护。
+
+#### 装饰者模式
+
+动态地给某个对象添加一些额外的职责，而不会影响从这个类中派生的其他对象
+
+```JavaScript
+Function.prototype.before = function (beforeFn) {
+  var _self = this
+  return function () {
+    beforeFn.apply(this, arguments)
+    return _self.apply(this, arguments)
+  }
+}
+
+Function.prototype.after = function (afterFn) {
+  var _self = this
+  return function () {
+    var ret = _self.apply(this, arguments)
+    afterFn.apply(this, arguments)
+    return ret
+  }
+}
+
+function fn(a) {
+  console.log(a)
+}
+
+var fn2 = fn.before(function (a) {
+  console.log(a - 1)
+}).after(function (a) {
+  console.log(a + 1)
+})
+
+fn2(1)
+```
+
+#### 状态模式
+
+状态模式的关键是区分事物内部的状态，事物内部状态的改变往往会带来事物的行为改变。
+
+```JavaScript
+var Light = function () {
+  this.currState = FSM.off; // 设置当前状态
+}
+
+Light.prototype.init = function () {
+  console.log('初始化操作')
+}
+
+Light.prototype.btn = function () {
+  this.currState.btn.call(this, arguments)
+}
+
+var FSM = {
+  off: {
+    btn: function () {
+      console.log('开灯为弱光')
+      this.currState = FSM.weakLight
+    }
+  },
+  weakLight: {
+    btn: function () {
+      console.log('变为强光')
+      this.currState = FSM.strongLight
+    }
+  },
+  strongLight: {
+    btn: function () {
+      console.log('关灯')
+      this.currState = FSM.off
+    }
+  }
+}
+
+var light = new Light()
+light.init()
+light.btn()
+light.btn()
+light.btn()
+light.btn()
+light.btn()
+light.btn()
+```
 
 ## 设计原则
 
