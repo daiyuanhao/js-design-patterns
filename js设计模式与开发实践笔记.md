@@ -231,6 +231,96 @@ Event.trigger('event1', 123)
 
 #### 命令模式
 
+命令模式最常见的应用场景是：有时候需要向某些对象发送请求，但是并不知道请求的接收者是谁，也不知道被请求的操作是什么。此时希望用一种松耦合的方式来设计程序，使得请求发送者和请求接收者能够消除彼此之间的耦合关系
+
+```JavaScript
+var closeDoorCommand = {
+  excute: function () {
+    console.log('关门')
+  }
+}
+
+var openPcCommand = {
+  excute: function () {
+    console.log('打开电脑')
+  }
+}
+
+var openQQCommand = {
+  excute: function () {
+    console.log('登录QQ')
+  }
+}
+
+var MacroCommand = function () {
+  return {
+    commandList: [],
+    add: function (command) {
+      this.commandList.push(command)
+    },
+    excute: function () {
+      this.commandList.forEach(command => command.excute())
+    }
+  }
+}
+
+var macroCommand = MacroCommand()
+macroCommand.add(closeDoorCommand)
+macroCommand.add(openPcCommand)
+macroCommand.add(openQQCommand)
+
+macroCommand.excute()
+```
+
+#### 组合模式
+
+表示对象的部分-整体层次结构，统一对待树中的所有对象
+
+```JavaScript
+var Folder = function (name) {
+  this.name = name
+  this.files = []
+}
+
+Folder.prototype.add = function (file) {
+  this.files.push(file)
+}
+
+Folder.prototype.scan = function () {
+  console.log('开始扫描文件夹：' + this.name)
+  this.files.forEach(file => file.scan())
+}
+
+var File = function (name) {
+  this.name = name
+}
+
+File.prototype.add = function () {
+  throw new Error('文件下不能添加文件')
+}
+
+File.prototype.scan = function () {
+  console.log('开始扫描文件：' + this.name)
+}
+
+var folder = new Folder('学习资料')
+var folder1 = new Folder('JavaScript')
+var folder2 = new Folder('jquery')
+
+var file1 = new File('JavaScript设计模式与开发实践')
+var file2 = new File('精通jquery')
+var file3 = new File('重构与模式')
+
+folder1.add(file1)
+folder2.add(file2)
+
+folder.add(folder1)
+folder.add(folder2)
+folder.add(file3)
+
+folder.scan()
+```
+
 #### 模板方法模式
 
 在抽象父类中封装了子类的算法框架，包括实现一些公共方法以及封装子类中所有方法的执行顺序。子类通过继承这个抽象类，也继承了整个算法结构，并且可以选择重写父类的方法。
@@ -286,6 +376,110 @@ example1.init()
 #### 中介者模式
 
 中介者模式使各个对象之间得以解耦，以中介者和对象之间的一对多关系取代了对象之间的网状多对多关系。各个对象只需关注自身功能的实现，对象之间的交互关系交给了中介者对象来实现和维护。
+
+```JavaScript
+var Player = function (name, teamColor) {
+  this.name = name
+  this.teamColor = teamColor
+  this.state = 'alive'
+}
+
+Player.prototype.win = function () {
+  console.log(this.name + ' won')
+}
+
+Player.prototype.lose = function () {
+  console.log(this.name + ' lost')
+}
+
+Player.prototype.die = function () {
+  this.state = 'dead'
+  playerDirector.receiveMessage('playerDead', this)
+}
+
+Player.prototype.remove = function () {
+  playerDirector.receiveMessage('removePlayer', this)
+}
+
+Player.prototype.changeTeam = function (color) {
+  playerDirector.receiveMessage('changeTeam', this, color)
+}
+
+var playerFactory = function (name, teamColor) {
+  var newPlayer = new Player(name, teamColor);
+  playerDirector.receiveMessage('addPlayer', newPlayer);
+  return newPlayer;
+};
+
+//中介者
+var playerDirector = (function () {
+  var players = {},
+    options = {}
+
+  options.addPlayer = function (player) {
+    var teamColor = player.teamColor
+    players[teamColor] = players[teamColor] || []
+    players[teamColor].push(player)
+  }
+
+  options.removePlayer = function (player) {
+    var teamColor = player.teamColor,
+      teamPlayers = players[teamColor] || []
+    for (var i = teamPlayers.length - 1; i >= 0; i--) {
+      if (teamPlayers[i] === player) {
+        teamPlayers.splice(i, 1)
+      }
+    }
+  }
+
+  options.changeTeam = function (player, newTeamColor) {
+    options.removePlayer(player)
+    var teamColor = player.teamColor
+    player.teamColor = newTeamColor
+    options.addPlayer(player)
+  }
+
+  options.playerDead = function (player) {
+    var teamColor = player.teamColor,
+      teamPlayers = players[teamColor]
+    var all_dead = !teamPlayers.some(player => player.state === 'alive')
+    if (all_dead) {
+      teamPlayers.forEach(player => player.lose())
+      for (var color in players) {
+        if (color !== teamColor) {
+          var teamPlayers = players[color]
+          teamPlayers.forEach(player => player.win())
+        }
+      }
+    }
+  }
+
+  var receiveMessage = function () {
+    var message = [].shift.call(arguments)
+    options[message].apply(this, arguments)
+  }
+
+  return {
+    receiveMessage
+  }
+
+})()
+
+// 红队：
+var player1 = playerFactory('皮蛋', 'red'),
+  player2 = playerFactory('小乖', 'red'),
+  player3 = playerFactory('宝宝', 'red'),
+  player4 = playerFactory('小强', 'red');
+// 蓝队：
+var player5 = playerFactory('黑妞', 'blue'),
+  player6 = playerFactory('葱头', 'blue'),
+  player7 = playerFactory('胖墩', 'blue'),
+  player8 = playerFactory('海盗', 'blue');
+player1.die();
+player2.die();
+player3.die();
+player4.die();
+```
 
 #### 装饰者模式
 
